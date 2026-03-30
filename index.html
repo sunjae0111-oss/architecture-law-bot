@@ -4,142 +4,210 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>건축법규 AI 도우미</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;900&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;900&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
     --bg: #0f0e0c; --surface: #1a1916; --surface2: #222120;
     --border: #2e2c29; --accent: #c8a96e; --accent2: #e8c98a;
     --text: #f0ebe0; --text-muted: #8a8578; --text-dim: #5a5750;
-    --user-bubble: #1e2a1a; --user-border: #3a5030;
   }
-  body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-  .header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 14px; background: var(--surface); flex-shrink: 0; }
-  .logo-mark { width: 36px; height: 36px; background: var(--accent); display: flex; align-items: center; justify-content: center; font-family: 'Noto Serif KR', serif; font-weight: 900; font-size: 18px; color: #0f0e0c; }
-  .header-text h1 { font-family: 'Noto Serif KR', serif; font-size: 15px; font-weight: 600; }
-  .header-text p { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+  body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 14px; background: var(--surface); }
+  .logo-mark { width: 40px; height: 40px; background: var(--accent); display: flex; align-items: center; justify-content: center; font-family: 'Noto Serif KR', serif; font-weight: 900; font-size: 20px; color: #0f0e0c; }
+  .header-text h1 { font-family: 'Noto Serif KR', serif; font-size: 16px; font-weight: 600; }
+  .header-text p { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
   .beta-badge { margin-left: auto; background: rgba(200,169,110,0.15); border: 1px solid rgba(200,169,110,0.3); color: var(--accent); font-size: 10px; padding: 3px 8px; letter-spacing: 1px; }
-  .chat-area { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
-  .message { display: flex; gap: 10px; animation: fadeUp 0.3s ease; }
-  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-  .message.user { flex-direction: row-reverse; }
-  .avatar { width: 30px; height: 30px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; margin-top: 2px; }
-  .avatar.ai { background: var(--accent); color: #0f0e0c; font-family: 'Noto Serif KR', serif; }
-  .avatar.user { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
-  .bubble { max-width: 75%; padding: 12px 16px; font-size: 13.5px; line-height: 1.75; color: var(--text); }
-  .message.ai .bubble { background: var(--surface); border: 1px solid var(--border); }
-  .message.user .bubble { background: var(--user-bubble); border: 1px solid var(--user-border); }
-  .law-cite { margin-top: 10px; padding: 10px 12px; background: rgba(200,169,110,0.06); border-left: 2px solid var(--accent); font-size: 12px; color: var(--text-muted); line-height: 1.6; }
-  .law-cite strong { color: var(--accent); font-size: 11px; display: block; margin-bottom: 3px; }
-  .disclaimer { margin-top: 8px; font-size: 11px; color: var(--text-dim); }
-  .quick-questions { padding: 0 20px 12px; display: flex; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
-  .quick-btn { font-size: 12px; padding: 6px 12px; background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; transition: all 0.15s; font-family: 'Noto Sans KR', sans-serif; }
-  .quick-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .input-area { padding: 12px 16px 14px; border-top: 1px solid var(--border); background: var(--surface); display: flex; gap: 10px; align-items: flex-end; flex-shrink: 0; }
-  .input-wrap { flex: 1; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: flex-end; padding: 10px 14px; transition: border-color 0.2s; }
-  .input-wrap:focus-within { border-color: var(--accent); }
-  textarea { flex: 1; background: transparent; border: none; outline: none; color: var(--text); font-size: 13.5px; font-family: 'Noto Sans KR', sans-serif; resize: none; line-height: 1.6; max-height: 100px; min-height: 22px; }
-  textarea::placeholder { color: var(--text-dim); }
-  .send-btn { width: 42px; height: 42px; background: var(--accent); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
-  .send-btn:hover { background: var(--accent2); }
-  .send-btn:disabled { background: var(--border); cursor: not-allowed; }
-  .send-btn svg { width: 16px; height: 16px; fill: #0f0e0c; }
-  .typing { display: flex; gap: 4px; align-items: center; padding: 10px 0; }
-  .dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: bounce 1.2s infinite; }
-  .dot:nth-child(2) { animation-delay: 0.2s; }
-  .dot:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes bounce { 0%,60%,100% { transform: translateY(0); opacity:0.4; } 30% { transform: translateY(-5px); opacity:1; } }
-  .welcome { text-align: center; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
-  .welcome-icon { width: 56px; height: 56px; background: rgba(200,169,110,0.12); border: 1px solid rgba(200,169,110,0.25); display: flex; align-items: center; justify-content: center; font-size: 24px; }
-  .welcome h2 { font-family: 'Noto Serif KR', serif; font-size: 17px; font-weight: 600; }
-  .welcome p { font-size: 12.5px; color: var(--text-muted); line-height: 1.8; max-width: 280px; }
+
+  .search-section { padding: 40px 24px 24px; max-width: 680px; margin: 0 auto; }
+  .search-title { font-family: 'Noto Serif KR', serif; font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+  .search-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; line-height: 1.7; }
+
+  .address-box { background: var(--surface); border: 1px solid var(--border); padding: 20px; margin-bottom: 16px; }
+  .address-label { font-size: 11px; color: var(--accent); letter-spacing: 1px; margin-bottom: 10px; font-weight: 500; }
+  .address-display { font-size: 15px; color: var(--text); min-height: 24px; margin-bottom: 12px; }
+  .address-display.placeholder { color: var(--text-dim); font-size: 13px; }
+
+  .addr-btn { width: 100%; padding: 13px; background: var(--accent); border: none; color: #0f0e0c; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; transition: background 0.15s; }
+  .addr-btn:hover { background: var(--accent2); }
+  .addr-btn.secondary { background: transparent; border: 1px solid var(--border); color: var(--text-muted); font-weight: 400; margin-top: 8px; }
+  .addr-btn.secondary:hover { border-color: var(--accent); color: var(--accent); background: transparent; }
+
+  .analyze-btn { width: 100%; padding: 16px; background: var(--accent); border: none; color: #0f0e0c; font-size: 15px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; transition: all 0.15s; display: none; margin-top: 8px; }
+  .analyze-btn:hover { background: var(--accent2); }
+  .analyze-btn.visible { display: block; }
+  .analyze-btn:disabled { background: var(--border); color: var(--text-dim); cursor: not-allowed; }
+
+  /* Results */
+  .results { max-width: 680px; margin: 0 auto; padding: 0 24px 48px; display: none; }
+  .results.visible { display: block; }
+
+  .zone-card { background: var(--surface); border: 1px solid var(--accent); padding: 20px 24px; margin-bottom: 20px; }
+  .zone-label { font-size: 11px; color: var(--accent); letter-spacing: 1px; margin-bottom: 6px; }
+  .zone-name { font-family: 'Noto Serif KR', serif; font-size: 20px; font-weight: 600; margin-bottom: 6px; }
+  .zone-summary { font-size: 13px; color: var(--text-muted); line-height: 1.7; }
+
+  .rules-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  @media (max-width: 500px) { .rules-grid { grid-template-columns: 1fr; } }
+
+  .rule-card { background: var(--surface); border: 1px solid var(--border); padding: 16px; transition: border-color 0.2s; }
+  .rule-card:hover { border-color: var(--accent); }
+  .rule-title { font-size: 11px; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 6px; }
+  .rule-value { font-family: 'Noto Serif KR', serif; font-size: 18px; font-weight: 600; color: var(--accent); margin-bottom: 6px; }
+  .rule-desc { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+  .rule-law { font-size: 10px; color: var(--text-dim); margin-top: 8px; font-family: monospace; }
+
+  .caution-box { background: rgba(200,169,110,0.06); border: 1px solid rgba(200,169,110,0.2); border-left: 3px solid var(--accent); padding: 12px 16px; font-size: 12px; color: var(--text-muted); line-height: 1.7; }
+
+  .reset-btn { width: 100%; padding: 12px; background: transparent; border: 1px solid var(--border); color: var(--text-muted); font-size: 13px; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; margin-top: 16px; transition: all 0.15s; }
+  .reset-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Loading */
+  .loading { text-align: center; padding: 48px 0; display: none; }
+  .loading.visible { display: block; }
+  .loading-icon { font-size: 32px; animation: spin 2s linear infinite; display: inline-block; margin-bottom: 16px; }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .loading-text { font-size: 13px; color: var(--text-muted); }
+
+  .samples { margin-top: 20px; }
+  .samples-label { font-size: 11px; color: var(--text-dim); margin-bottom: 10px; letter-spacing: 0.5px; }
+  .sample-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+  .sample-btn { font-size: 12px; padding: 6px 12px; background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; transition: all 0.15s; font-family: 'Noto Sans KR', sans-serif; }
+  .sample-btn:hover { border-color: var(--accent); color: var(--accent); }
 </style>
 </head>
 <body>
+
 <div class="header">
   <div class="logo-mark">法</div>
   <div class="header-text">
     <h1>건축법규 AI 도우미</h1>
-    <p>일반인도 쉽게 이해하는 건축 법규 안내</p>
+    <p>주소 하나로 건축 법규 한눈에 확인</p>
   </div>
   <div class="beta-badge">BETA</div>
 </div>
-<div class="chat-area" id="chatArea">
-  <div class="welcome" id="welcome">
-    <div class="welcome-icon">🏛️</div>
-    <h2>건축 법규, 쉽게 물어보세요</h2>
-    <p>건폐율, 용적률, 용도지역, 주차 계산, 일조권 등<br>건축주가 꼭 알아야 할 법규를 쉽게 설명해드립니다</p>
+
+<div class="search-section">
+  <h2 class="search-title">어디에 집을 지으시나요?</h2>
+  <p class="search-subtitle">주소를 입력하면 해당 지역의 건축 법규를<br>쉽게 정리해드려요</p>
+
+  <div class="address-box">
+    <div class="address-label">📍 건축 예정지 주소</div>
+    <div class="address-display placeholder" id="addressDisplay">주소 검색 버튼을 눌러주세요</div>
+    <button class="addr-btn" onclick="openPostcode()">🔍 주소 검색</button>
+  </div>
+
+  <button class="analyze-btn" id="analyzeBtn" onclick="analyze()">🏛️ 건축 법규 분석하기</button>
+
+  <div class="samples">
+    <div class="samples-label">예시 주소로 테스트해보기</div>
+    <div class="sample-btns">
+      <button class="sample-btn" onclick="setSample('서울특별시 강남구 역삼동 123')">서울 강남구 역삼동</button>
+      <button class="sample-btn" onclick="setSample('서울특별시 마포구 합정동 456')">서울 마포구 합정동</button>
+      <button class="sample-btn" onclick="setSample('경기도 성남시 분당구 정자동 789')">경기 성남시 분당구</button>
+    </div>
   </div>
 </div>
-<div class="quick-questions" id="quickQ">
-  <button class="quick-btn" onclick="sendQuick(this)">2종 일반주거지역에 4층 집 지을 수 있나요?</button>
-  <button class="quick-btn" onclick="sendQuick(this)">건폐율 60%가 뭔 뜻이에요?</button>
-  <button class="quick-btn" onclick="sendQuick(this)">주차장 몇 개 필요한지 알고 싶어요</button>
+
+<div class="loading" id="loading">
+  <div class="loading-icon">⚖️</div>
+  <div class="loading-text">법규를 분석하고 있어요...<br>잠시만 기다려주세요</div>
 </div>
-<div class="input-area">
-  <div class="input-wrap">
-    <textarea id="userInput" placeholder="궁금한 법규를 질문해보세요..." rows="1"
-      onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+
+<div class="results" id="results">
+  <div class="zone-card">
+    <div class="zone-label">용도지역</div>
+    <div class="zone-name" id="zoneName">—</div>
+    <div class="zone-summary" id="zoneSummary">—</div>
   </div>
-  <button class="send-btn" id="sendBtn" onclick="sendMessage()">
-    <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
-  </button>
+
+  <div class="rules-grid" id="rulesGrid"></div>
+
+  <div class="caution-box" id="cautionBox"></div>
+
+  <button class="reset-btn" onclick="reset()">↩ 다른 주소 분석하기</button>
 </div>
+
 <script>
-  let isLoading = false;
+  let selectedAddress = '';
 
-  function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,100)+'px'; }
-  function handleKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();} }
-  function sendQuick(btn) { document.getElementById('userInput').value=btn.textContent; sendMessage(); }
-
-  function appendMessage(role, content, cite) {
-    document.getElementById('welcome').style.display='none';
-    document.getElementById('quickQ').style.display='none';
-    const msg=document.createElement('div'); msg.className=`message ${role}`;
-    const av=document.createElement('div'); av.className=`avatar ${role}`; av.textContent=role==='ai'?'法':'나';
-    const bub=document.createElement('div'); bub.className='bubble';
-    bub.innerHTML=content.replace(/\n/g,'<br>');
-    if(cite){
-      bub.innerHTML+=`<div class="law-cite"><strong>📋 근거 법령</strong>${cite}</div>`;
-      bub.innerHTML+=`<div class="disclaimer">⚠️ 본 내용은 참고용이며, 실제 인허가는 담당 건축사와 확인하세요.</div>`;
-    }
-    msg.appendChild(av); msg.appendChild(bub);
-    const ca=document.getElementById('chatArea'); ca.appendChild(msg); ca.scrollTop=ca.scrollHeight;
+  function openPostcode() {
+    new daum.Postcode({
+      oncomplete: function(data) {
+        selectedAddress = data.roadAddress || data.jibunAddress;
+        document.getElementById('addressDisplay').textContent = selectedAddress;
+        document.getElementById('addressDisplay').classList.remove('placeholder');
+        document.getElementById('analyzeBtn').classList.add('visible');
+      }
+    }).open();
   }
 
-  function showTyping() {
-    const msg=document.createElement('div'); msg.className='message ai'; msg.id='typing';
-    const av=document.createElement('div'); av.className='avatar ai'; av.textContent='法';
-    const bub=document.createElement('div'); bub.className='bubble';
-    bub.innerHTML='<div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
-    msg.appendChild(av); msg.appendChild(bub);
-    const ca=document.getElementById('chatArea'); ca.appendChild(msg); ca.scrollTop=ca.scrollHeight;
+  function setSample(addr) {
+    selectedAddress = addr;
+    document.getElementById('addressDisplay').textContent = addr;
+    document.getElementById('addressDisplay').classList.remove('placeholder');
+    document.getElementById('analyzeBtn').classList.add('visible');
   }
 
-  async function sendMessage() {
-    const text=document.getElementById('userInput').value.trim();
-    if(!text||isLoading) return;
-    isLoading=true; document.getElementById('sendBtn').disabled=true;
-    document.getElementById('userInput').value='';
-    appendMessage('user',text); showTyping();
+  async function analyze() {
+    if (!selectedAddress) return;
+    const btn = document.getElementById('analyzeBtn');
+    btn.disabled = true;
+    btn.textContent = '분석 중...';
+    document.querySelector('.search-section').style.display = 'none';
+    document.getElementById('loading').classList.add('visible');
+    document.getElementById('results').classList.remove('visible');
+
     try {
-      const res=await fetch('/api/chat',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({message:text})
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: selectedAddress })
       });
-      const data=await res.json();
-      document.getElementById('typing')?.remove();
-      const full=data.text||'답변을 가져오지 못했어요.';
-      const m=full.match(/【근거법령】([\s\S]+)$/);
-      const mainText=m?full.replace(m[0],'').trim():full;
-      const cite=m?m[1].trim():null;
-      appendMessage('ai',mainText,cite);
+      const data = await res.json();
+      renderResults(data);
     } catch(e) {
-      document.getElementById('typing')?.remove();
-      appendMessage('ai','네트워크 오류가 발생했어요. 잠시 후 다시 시도해주세요.');
+      alert('오류가 발생했어요. 다시 시도해주세요.');
+      reset();
     }
-    isLoading=false; document.getElementById('sendBtn').disabled=false;
+
+    btn.disabled = false;
+    btn.textContent = '🏛️ 건축 법규 분석하기';
+  }
+
+  function renderResults(data) {
+    document.getElementById('loading').classList.remove('visible');
+    document.getElementById('zoneName').textContent = data.zone || '—';
+    document.getElementById('zoneSummary').textContent = data.summary || '—';
+    document.getElementById('cautionBox').textContent = data.caution || '';
+
+    const grid = document.getElementById('rulesGrid');
+    grid.innerHTML = '';
+    (data.rules || []).forEach(rule => {
+      const card = document.createElement('div');
+      card.className = 'rule-card';
+      card.innerHTML = `
+        <div class="rule-title">${rule.title}</div>
+        <div class="rule-value">${rule.value}</div>
+        <div class="rule-desc">${rule.desc}</div>
+        <div class="rule-law">📋 ${rule.law}</div>
+      `;
+      grid.appendChild(card);
+    });
+
+    document.getElementById('results').classList.add('visible');
+  }
+
+  function reset() {
+    selectedAddress = '';
+    document.getElementById('addressDisplay').textContent = '주소 검색 버튼을 눌러주세요';
+    document.getElementById('addressDisplay').classList.add('placeholder');
+    document.getElementById('analyzeBtn').classList.remove('visible');
+    document.querySelector('.search-section').style.display = 'block';
+    document.getElementById('loading').classList.remove('visible');
+    document.getElementById('results').classList.remove('visible');
   }
 </script>
 </body>
