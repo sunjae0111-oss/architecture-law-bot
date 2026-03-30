@@ -48,7 +48,7 @@
   .dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: bounce 1.2s infinite; }
   .dot:nth-child(2) { animation-delay: 0.2s; }
   .dot:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-5px); opacity: 1; } }
+  @keyframes bounce { 0%,60%,100% { transform: translateY(0); opacity:0.4; } 30% { transform: translateY(-5px); opacity:1; } }
   .welcome { text-align: center; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
   .welcome-icon { width: 56px; height: 56px; background: rgba(200,169,110,0.12); border: 1px solid rgba(200,169,110,0.25); display: flex; align-items: center; justify-content: center; font-size: 24px; }
   .welcome h2 { font-family: 'Noto Serif KR', serif; font-size: 17px; font-weight: 600; }
@@ -86,83 +86,60 @@
   </button>
 </div>
 <script>
-  const API_KEY = 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
-  const SYSTEM = `당신은 한국 건축 법규 전문 AI 도우미입니다. 집을 짓거나 리모델링하려는 일반인(건축주)을 위해 건축 법규를 쉽고 친근하게 설명해줍니다.
-[답변 규칙]
-1. 전문 용어는 반드시 괄호 안에 쉬운 설명 추가 (예: 건폐율(대지 면적 중 건물이 차지하는 비율))
-2. 숫자는 구체적인 예시로 설명 (예: 100평 땅이라면 60평까지 지을 수 있어요)
-3. 답변 끝에 근거 법령 명시: 📋 근거: 건축법 시행령 제X조
-4. 마지막 줄에 항상: ⚠️ 본 내용은 참고용이며, 실제 인허가는 담당 건축사와 확인하세요.
-5. 모르는 내용은 솔직히 "정확한 확인이 필요합니다"라고 안내
-[범위] 건폐율·용적률·층수, 용도지역·변경, 주차대수, 일조권·이격거리, 대지면적 법규`;
-
   let isLoading = false;
 
-  function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 100) + 'px'; }
-  function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
-  function sendQuick(btn) { document.getElementById('userInput').value = btn.textContent; sendMessage(); }
+  function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,100)+'px'; }
+  function handleKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();} }
+  function sendQuick(btn) { document.getElementById('userInput').value=btn.textContent; sendMessage(); }
 
   function appendMessage(role, content, cite) {
-    document.getElementById('welcome').style.display = 'none';
-    document.getElementById('quickQ').style.display = 'none';
-    const msg = document.createElement('div');
-    msg.className = `message ${role}`;
-    const av = document.createElement('div');
-    av.className = `avatar ${role}`;
-    av.textContent = role === 'ai' ? '法' : '나';
-    const bub = document.createElement('div');
-    bub.className = 'bubble';
-    bub.innerHTML = content.replace(/\n/g, '<br>');
-    if (cite) {
-      bub.innerHTML += `<div class="law-cite"><strong>📋 근거 법령</strong>${cite}</div>`;
-      bub.innerHTML += `<div class="disclaimer">⚠️ 본 내용은 참고용이며, 실제 인허가는 담당 건축사와 확인하세요.</div>`;
+    document.getElementById('welcome').style.display='none';
+    document.getElementById('quickQ').style.display='none';
+    const msg=document.createElement('div'); msg.className=`message ${role}`;
+    const av=document.createElement('div'); av.className=`avatar ${role}`; av.textContent=role==='ai'?'法':'나';
+    const bub=document.createElement('div'); bub.className='bubble';
+    bub.innerHTML=content.replace(/\n/g,'<br>');
+    if(cite){
+      bub.innerHTML+=`<div class="law-cite"><strong>📋 근거 법령</strong>${cite}</div>`;
+      bub.innerHTML+=`<div class="disclaimer">⚠️ 본 내용은 참고용이며, 실제 인허가는 담당 건축사와 확인하세요.</div>`;
     }
     msg.appendChild(av); msg.appendChild(bub);
-    const ca = document.getElementById('chatArea');
-    ca.appendChild(msg);
-    ca.scrollTop = ca.scrollHeight;
+    const ca=document.getElementById('chatArea'); ca.appendChild(msg); ca.scrollTop=ca.scrollHeight;
   }
 
   function showTyping() {
-    const msg = document.createElement('div');
-    msg.className = 'message ai'; msg.id = 'typing';
-    const av = document.createElement('div');
-    av.className = 'avatar ai'; av.textContent = '法';
-    const bub = document.createElement('div');
-    bub.className = 'bubble';
-    bub.innerHTML = '<div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+    const msg=document.createElement('div'); msg.className='message ai'; msg.id='typing';
+    const av=document.createElement('div'); av.className='avatar ai'; av.textContent='法';
+    const bub=document.createElement('div'); bub.className='bubble';
+    bub.innerHTML='<div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
     msg.appendChild(av); msg.appendChild(bub);
-    const ca = document.getElementById('chatArea');
-    ca.appendChild(msg); ca.scrollTop = ca.scrollHeight;
+    const ca=document.getElementById('chatArea'); ca.appendChild(msg); ca.scrollTop=ca.scrollHeight;
   }
 
   async function sendMessage() {
-    const text = document.getElementById('userInput').value.trim();
-    if (!text || isLoading) return;
-    isLoading = true;
-    document.getElementById('sendBtn').disabled = true;
-    document.getElementById('userInput').value = '';
-    appendMessage('user', text);
-    showTyping();
+    const text=document.getElementById('userInput').value.trim();
+    if(!text||isLoading) return;
+    isLoading=true; document.getElementById('sendBtn').disabled=true;
+    document.getElementById('userInput').value='';
+    appendMessage('user',text); showTyping();
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': API_KEY, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, system: SYSTEM, messages: [{ role: 'user', content: text }] })
+      const res=await fetch('/api/chat',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({message:text})
       });
-      const data = await res.json();
-      document.getElementById('typing').remove();
-      const full = data.content?.[0]?.text || '답변을 가져오지 못했어요.';
-      const m = full.match(/【근거법령】([\s\S]+)$/);
-      const mainText = m ? full.replace(m[0], '').trim() : full;
-      const cite = m ? m[1].trim() : null;
-      appendMessage('ai', mainText, cite);
+      const data=await res.json();
+      document.getElementById('typing')?.remove();
+      const full=data.text||'답변을 가져오지 못했어요.';
+      const m=full.match(/【근거법령】([\s\S]+)$/);
+      const mainText=m?full.replace(m[0],'').trim():full;
+      const cite=m?m[1].trim():null;
+      appendMessage('ai',mainText,cite);
     } catch(e) {
       document.getElementById('typing')?.remove();
-      appendMessage('ai', '네트워크 오류가 발생했어요. 잠시 후 다시 시도해주세요.');
+      appendMessage('ai','네트워크 오류가 발생했어요. 잠시 후 다시 시도해주세요.');
     }
-    isLoading = false;
-    document.getElementById('sendBtn').disabled = false;
+    isLoading=false; document.getElementById('sendBtn').disabled=false;
   }
 </script>
 </body>
