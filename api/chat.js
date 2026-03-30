@@ -35,8 +35,11 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
-    const text = data.content?.[0]?.text || '답변을 가져오지 못했어요.';
-    res.status(200).json({ text });
+    // 응답 전체를 로그로 확인 후 파싱
+const text = data?.content?.[0]?.text 
+          || data?.error?.message 
+          || JSON.stringify(data);
+res.status(200).json({ text });
   } catch (err) {
     res.status(500).json({ error: '서버 오류가 발생했어요.' });
   }
