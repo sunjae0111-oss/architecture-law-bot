@@ -35,23 +35,42 @@ export default async function handler(req, res) {
 
         const lurisRes = await fetch(lurisUrl);
         const lurisData = await lurisRes.json();
-        console.log('LURIS RAW:', JSON.stringify(lurisData));
-        const items = lurisData?.body?.items;
-        if (items && items.length > 0) {
-          // 용도지역 필터링
-          const zoneItems = items.filter(item =>
-            item.prposAreaDstrcNm?.includes('지역') ||
-            item.prposAreaDstrcNm?.includes('지구') ||
-            item.prposAreaDstrcNm?.includes('구역')
-          );
+console.log('LURIS RAW:', JSON.stringify(lurisData)); // 디버깅용
 
-          if (zoneItems.length > 0) {
-            zoneName = zoneItems[0].prposAreaDstrcNm;
-            zoneExtra = zoneItems.map(z => z.prposAreaDstrcNm).join(', ');
-          }
-        }
-      }
-    }
+const items = lurisData?.body?.items;
+if (items && items.length > 0) {
+
+  // ✅ 정확한 용도지역명 목록으로만 필터링
+  const ZONE_KEYWORDS = [
+    '제1종전용주거지역', '제2종전용주거지역',
+    '제1종일반주거지역', '제2종일반주거지역', '제3종일반주거지역',
+    '준주거지역',
+    '중심상업지역', '일반상업지역', '근린상업지역', '유통상업지역',
+    '전용공업지역', '일반공업지역', '준공업지역',
+    '보전녹지지역', '생산녹지지역', '자연녹지지역',
+    '보전관리지역', '생산관리지역', '계획관리지역',
+    '농림지역', '자연환경보전지역'
+  ];
+
+  // 용도지역만 정확히 추출
+  const zoneItem = items.find(item =>
+    ZONE_KEYWORDS.some(keyword =>
+      item.prposAreaDstrcNm?.replace(/\s/g, '').includes(keyword)
+    )
+  );
+
+  // 용도지역 외 나머지 지역지구 (재정비촉진지구, 토지거래허가구역 등)
+  const extraItems = items.filter(item =>
+    !ZONE_KEYWORDS.some(keyword =>
+      item.prposAreaDstrcNm?.replace(/\s/g, '').includes(keyword)
+    )
+  );
+
+  if (zoneItem) {
+    zoneName = zoneItem.prposAreaDstrcNm.trim();
+    zoneExtra = extraItems.map(z => z.prposAreaDstrcNm).join(', ');
+  }
+}
   } catch(e) {
     console.log('zone lookup error:', e.message);
     // 오류 나도 AI 분석은 계속 진행
