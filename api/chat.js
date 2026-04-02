@@ -29,6 +29,8 @@ export default async function handler(req, res) {
 
       if (bjdCode) {
         // ===== STEP 2: 토지이음 API로 실제 용도지역 조회 =====
+        // 산 여부: 카카오 mountain_yn이 'Y'면 '2', 아니면 '1'
+        const mountainYn = a.mountain_yn === 'Y' ? '2' : '1';
         const lurisUrl = `https://apis.data.go.kr/1611000/nsdi/LandUseService/attr/getLandUseAttr`
           + `?serviceKey=${process.env.LURIS_API_KEY}`
           + `&pnu=${bjdCode}${mainNo}${subNo}`
