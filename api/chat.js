@@ -35,7 +35,7 @@ export default async function handler(req, res) {
 
         const lurisRes = await fetch(lurisUrl);
         const lurisData = await lurisRes.json();
-
+        console.log('LURIS RAW:', JSON.stringify(lurisData));
         const items = lurisData?.body?.items;
         if (items && items.length > 0) {
           // 용도지역 필터링
