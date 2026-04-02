@@ -126,30 +126,21 @@
   let selectedX = null;
   let selectedY = null;
 
-  function openPostcode() {
-    new daum.Postcode({
-      oncomplete: function(data) {
-        selectedAddress = data.roadAddress || data.jibunAddress;
+oncomplete: function(data) {
+  selectedAddress = data.roadAddress || data.jibunAddress;
+  selectedJibun = data.jibunAddress; // 지번주소 추가 저장
 
-        // 카카오 주소 → 좌표 변환 (프론트에서 직접 호출)
-        fetch(`https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(selectedAddress)}`, {
-          headers: { Authorization: `KakaoAK ${KAKAO_KEY}` }
-        })
-        .then(r => r.json())
-        .then(d => {
-          const doc = d?.documents?.[0];
-          selectedX = doc?.x || null;
-          selectedY = doc?.y || null;
-        })
-        .catch(() => {
-          selectedX = null;
-          selectedY = null;
-        });
+  // ... 기존 카카오 좌표 fetch 코드 ...
+  setAddress(selectedAddress);
+}
 
-        setAddress(selectedAddress);
-      }
-    }).open();
-  }
+// analyze() 함수 body 부분
+body: JSON.stringify({
+  address: selectedAddress,
+  jibunAddress: selectedJibun, // 추가
+  x: selectedX,
+  y: selectedY
+})
 
   function setSample(addr, x, y) {
     selectedAddress = addr;
