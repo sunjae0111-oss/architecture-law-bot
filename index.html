@@ -46,6 +46,7 @@
   .results.visible { display: block; }
   .result-address { font-size: 12px; color: var(--text-dim); margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
   .zone-card { background: var(--surface); border: 1px solid var(--accent); padding: 22px 24px; margin-bottom: 16px; animation: fadeUp 0.4s ease; }
+  .zone-extra { font-size: 11px; color: var(--text-dim); margin-top: 6px; }
   @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
   .zone-label { font-size: 11px; color: var(--accent); letter-spacing: 1px; margin-bottom: 8px; }
   .zone-name { font-family: 'Noto Serif KR', serif; font-size: 22px; font-weight: 600; margin-bottom: 8px; }
@@ -92,9 +93,9 @@
     <div class="samples">
       <div class="samples-label">▸ 예시 주소로 바로 테스트해보기</div>
       <div class="sample-btns">
-        <button class="sample-btn" onclick="setSample('서울특별시 강남구 역삼동 737', '127.036490', '37.500622')">서울 강남구 역삼동</button>
-        <button class="sample-btn" onclick="setSample('서울특별시 마포구 합정동 426', '126.914700', '37.549400')">서울 마포구 합정동</button>
-        <button class="sample-btn" onclick="setSample('경기도 수원시 팔달구 인계동 1098', '127.028000', '37.263000')">경기 수원시 인계동</button>
+        <button class="sample-btn" onclick="setSample('서울특별시 강남구 역삼동 737', '서울특별시 강남구 역삼동 737')">서울 강남구 역삼동</button>
+        <button class="sample-btn" onclick="setSample('서울특별시 마포구 합정동 426', '서울특별시 마포구 합정동 426')">서울 마포구 합정동</button>
+        <button class="sample-btn" onclick="setSample('경기도 수원시 팔달구 인계동 1098', '경기도 수원시 팔달구 인계동 1098')">경기 수원시 인계동</button>
       </div>
     </div>
   </div>
@@ -102,7 +103,7 @@
   <div class="loading" id="loading">
     <div class="loading-spinner"></div>
     <div class="loading-text">
-      국토부 데이터에서 용도지역을 조회하고 있어요...<br>
+      토지이음에서 용도지역을 정확히 조회하고 있어요...<br>
       AI가 법규를 분석 중이에요. 잠시만 기다려주세요 🏛️
     </div>
   </div>
@@ -113,6 +114,7 @@
       <div class="zone-label">📌 용도지역</div>
       <div class="zone-name" id="zoneName"></div>
       <div class="zone-summary" id="zoneSummary"></div>
+      <div class="zone-extra" id="zoneExtra"></div>
     </div>
     <div class="rules-grid" id="rulesGrid"></div>
     <div class="caution-box" id="cautionBox"></div>
@@ -123,30 +125,39 @@
 <script>
   const KAKAO_KEY = 'b1bc19ce5e3cddd62ff4c0d3e55e1ca7';
   let selectedAddress = '';
+  let selectedJibun = '';
   let selectedX = null;
   let selectedY = null;
 
-oncomplete: function(data) {
-  selectedAddress = data.roadAddress || data.jibunAddress;
-  selectedJibun = data.jibunAddress; // 지번주소 추가 저장
+  function openPostcode() {
+    new daum.Postcode({
+      oncomplete: function(data) {
+        selectedAddress = data.roadAddress || data.jibunAddress;
+        selectedJibun = data.jibunAddress; // 지번주소 저장 (토지이음 조회용)
 
-  // ... 기존 카카오 좌표 fetch 코드 ...
-  setAddress(selectedAddress);
-}
+        // 카카오에서 좌표 획득
+        fetch(`https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(selectedJibun || selectedAddress)}`, {
+          headers: { Authorization: `KakaoAK ${KAKAO_KEY}` }
+        })
+        .then(r => r.json())
+        .then(d => {
+          const doc = d?.documents?.[0];
+          selectedX = doc?.x || null;
+          selectedY = doc?.y || null;
+        })
+        .catch(() => { selectedX = null; selectedY = null; });
 
-// analyze() 함수 body 부분
-body: JSON.stringify({
-  address: selectedAddress,
-  jibunAddress: selectedJibun, // 추가
-  x: selectedX,
-  y: selectedY
-})
+        setAddress(selectedAddress);
+      }
+    }).open();
+  }
 
-  function setSample(addr, x, y) {
-    selectedAddress = addr;
-    selectedX = x;
-    selectedY = y;
-    setAddress(addr);
+  function setSample(roadAddr, jibunAddr) {
+    selectedAddress = roadAddr;
+    selectedJibun = jibunAddr;
+    selectedX = null;
+    selectedY = null;
+    setAddress(roadAddr);
   }
 
   function setAddress(addr) {
@@ -171,7 +182,12 @@ body: JSON.stringify({
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address: selectedAddress, x: selectedX, y: selectedY })
+        body: JSON.stringify({
+          address: selectedAddress,
+          jibunAddress: selectedJibun, // 지번주소 추가 전송
+          x: selectedX,
+          y: selectedY
+        })
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -193,6 +209,14 @@ body: JSON.stringify({
     document.getElementById('zoneSummary').textContent = data.summary || '';
     document.getElementById('cautionBox').textContent = data.caution || '';
 
+    // 추가 지역지구 표시
+    const extra = document.getElementById('zoneExtra');
+    if (data.zoneExtra && data.zoneExtra !== data.zone) {
+      extra.textContent = '+ ' + data.zoneExtra;
+    } else {
+      extra.textContent = '';
+    }
+
     const grid = document.getElementById('rulesGrid');
     grid.innerHTML = '';
     (data.rules || []).forEach((rule, i) => {
@@ -213,6 +237,7 @@ body: JSON.stringify({
 
   function reset() {
     selectedAddress = '';
+    selectedJibun = '';
     selectedX = null;
     selectedY = null;
     document.getElementById('addressDisplay').textContent = '주소 검색 버튼을 눌러주세요';
