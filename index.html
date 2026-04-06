@@ -129,28 +129,18 @@
   let selectedX = null;
   let selectedY = null;
 
-  function openPostcode() {
-    new daum.Postcode({
-      oncomplete: function(data) {
-        selectedAddress = data.roadAddress || data.jibunAddress;
-        selectedJibun = data.jibunAddress; // 지번주소 저장 (토지이음 조회용)
-
-        // 카카오에서 좌표 획득
-        fetch(`https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(selectedJibun || selectedAddress)}`, {
-          headers: { Authorization: `KakaoAK ${KAKAO_KEY}` }
-        })
-        .then(r => r.json())
-        .then(d => {
-          const doc = d?.documents?.[0];
-          selectedX = doc?.x || null;
-          selectedY = doc?.y || null;
-        })
-        .catch(() => { selectedX = null; selectedY = null; });
-
-        setAddress(selectedAddress);
-      }
-    }).open();
-  }
+ function openPostcode() {
+  new daum.Postcode({
+    oncomplete: function(data) {
+      selectedAddress = data.roadAddress || data.jibunAddress;
+      selectedJibun = data.jibunAddress;
+      // 좌표는 서버에서 처리하므로 여기서 카카오 호출 불필요
+      selectedX = null;
+      selectedY = null;
+      setAddress(selectedAddress);
+    }
+  }).open();
+}
 
   function setSample(roadAddr, jibunAddr) {
     selectedAddress = roadAddr;
